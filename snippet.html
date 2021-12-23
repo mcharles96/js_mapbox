@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Map</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
+
+<style>
+
+    #menu {
+        position: absolute;
+        background: #fff;
+        padding: 8.8px;
+        font: 14px/14px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        color: rgba(0, 0, 0, 0.5);
+        border-radius: 4px;
+        left: 50px;
+        top: 10px;
+    }
+
+    .map-overlay {
+        font: 10px/14px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        position: absolute;
+        top: 50px;
+        left: 0;
+        width: 32%;
+        padding: 10px;
+    }
+
+    .map-overlay .map-overlay-inner {
+        background-color: #fff;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .map-overlay-inner fieldset {
+        border: none;
+        padding: 0;
+        margin: 0 0 10px;
+    }
+
+    .geocoder {
+        position: absolute;
+        z-index: 1;
+        width: 295px;
+        left: 10px;
+        /* margin-left: -15%; */
+        top: 50px;
+    }
+
+    .mapboxgl-ctrl-geocoder {
+        min-width: 100%;
+    }
+
+    .mapboxgl-popup {
+        max-width: 400px;
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    }
+
+    .select {
+        float: right;
+        margin-top: -0.9%;
+    }
+
+    .filter-ctrl {
+        position: absolute;
+        top: 95px;
+        left: 10px;
+        z-index: 1;
+    }
+ 
+    .filter-ctrl input[type='text'] {
+        font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        width: 100%;
+        border: 0;
+        background-color: #fff;
+        margin: 0;
+        color: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+        width: 295px;
+    }
+
+    .mapboxgl-popup-content {
+        font: 12px/10px 'Open Sans', sans-serif;
+        line-height: 1.5;
+        /* background-color: #000425; */
+        /* color: #FFE626; */
+        color: grey;
+    }
+
+    .home {
+        position: absolute;
+        cursor: pointer;
+    }
+
+    /* .h3 {
+        color: #FFE626;
+    } */
+
+</style>
+
+<div id="map"></div>
+
+<div class="home">
+    <div class="w3-padding w3-xlarge w3-text-grey">
+        <a href="/"><i class="fa fa-home"></i></a>
+    </div>
+</div>
+
+<div class="filter-ctrl">
+<input id="filter-input" type="text" name="filter" placeholder="Filter by ID">
+</div>
+
+<div id="geocoder" class="geocoder"></div>
+
+<div id="menu">
+    <input id="satellite-v9" type="radio" name="rtoggle" value="satellite">
+    <!-- See a list of Mapbox-hosted public styles at -->
+    <!-- https://docs.mapbox.com/api/maps/styles/#mapbox-styles -->
+    <label for="satellite-v9">satellite</label>
+    <input id="light-v10" type="radio" name="rtoggle" value="light" checked="checked">
+    <label for="light-v10">light</label>
+    <input id="dark-v10" type="radio" name="rtoggle" value="dark">
+    <label for="dark-v10">dark</label>
+    <!-- <input id="streets-v11" type="radio" name="rtoggle" value="streets" checked="checked">
+    <label for="streets-v11">streets</label> -->
+    <input id="outdoors-v11" type="radio" name="rtoggle" value="outdoors">
+    <label for="outdoors-v11">outdoors</label>
+</div>
+<script>
+
+	mapboxgl.accessToken = '<access_token>';
+    const map = new mapboxgl.Map({
+        container: 'map', // container ID
+        style: 'mapbox://styles/mapbox/light-v10', // style URL
+        center: [-2.81361, 36.77271], // starting position [lng, lat]
+        zoom: 5 // starting zoom
+    });
+
+    var point = {
+        'type': 'FeatureCollection',
+        'features': [{
+            'type': 'Feature',
+            'geometry': {'type': 'Point', 'coordinates': [-62.54549408, 14.7610321]},
+            'properties': {'timestamp': '2021-12-21 07:54:36.290000',
+            'ID': 'First'}},
+            {'type': 'Feature',
+            'geometry': {'type': 'Point', 'coordinates': [44.17101669, 12.27271461]},
+            'properties': {'timestamp': '2021-12-21 07:53:34.267000',
+            'ID': 'Second'}}]};
+
+    var path = {'type': 'FeatureCollection',
+    'features': [{'type': 'Feature',
+        'geometry': {'type': 'LineString',
+            'coordinates': [[-87.77508545, 13.28812027],
+            [-87.77508545, 13.28812027],
+            [-87.77508545, 13.28812027],
+            [-87.77508545, 13.28812027],
+            [-87.77508545, 13.28812027],
+            [-87.77508545, 13.28812027],
+            [-87.77508545, 13.28812027],
+            [-87.77508545, 13.28812027],
+            [-87.77489471, 13.28310204],
+            [-87.77489471, 13.28310204],
+            [-87.52212524, 12.37390518],
+            [-87.45012665, 12.26437378],
+            [-87.45012665, 12.26437378],
+            [-86.81832123, 11.25268841],
+            [-86.632164, 10.97204494],
+            [-86.55250549, 10.8299017],
+            [-85.90349579, 9.80955505],
+            [-85.90349579, 9.80955505],
+            [-85.1325531, 9.18647003],
+            [-84.83325958, 8.94231129],
+            [-84.83325958, 8.94231129],
+            [-84.06276703, 8.34832668],
+            [-83.90045929, 8.21868706],
+            [-83.90045929, 8.21868706],
+            [-82.84297943, 7.54532146],
+            [-82.73403168, 7.46962357],
+            [-82.12780762, 7.07243681],
+            [-81.64379883, 6.89848518],
+            [-81.39883423, 6.89684486],
+            [-80.81790924, 6.90064478],
+            [-80.69654846, 6.90067816],
+            [-80.1289444, 6.97361517],
+            [-79.68593597, 7.4140234],
+            [-79.40314484, 7.71271515],
+            [-79.40314484, 7.71271515],
+            [-79.40476227, 8.70917511],
+            [-79.51725006, 8.8713932],
+            [-79.51813507, 8.87118149],
+            [-79.51840973, 8.87119865],
+            [-79.51850891, 8.87125874],
+            [-79.51896667, 8.87237167],
+            [-79.51856995, 8.87136364],
+            [-79.51861572, 8.87139511],
+            [-79.5187912, 8.87153339],
+            [-79.51860809, 8.8713665],
+            [-79.51906586, 8.87259483],
+            [-79.5271225, 8.89599037],
+            [-79.59078979, 8.9953146],
+            [-79.64561462, 9.04102135],
+            [-79.9184494, 9.3114996],
+            [-79.97821808, 9.70694828]]},
+            'properties':{
+                'ID': 'First'
+        }},
+        {'type': 'Feature',
+        'geometry': {'type': 'LineString',
+            'coordinates': [[-6.86561155, -38.69380188],
+            [-6.86561155, -38.69380188],
+            [-6.34462166, -38.69168091],
+            [-5.88037014, -38.6879425],
+            [-5.23413181, -38.68058395],
+            [-4.71942329, -38.6692009],
+            [-4.29176855, -38.64897919],
+            [-3.74157, -38.6172905],
+            [-3.11941838, -38.58509064],
+            [-2.60209322, -38.50024033],
+            [-2.2126534, -38.27651215],
+            [-1.80426168, -38.1837616],
+            [-0.81268334, -37.9391098],
+            [-0.20020166, -37.89985657],
+            [0.25495666, -37.87674713],
+            [0.78935832, -37.84231186],
+            [1.35473335, -37.80699158],
+            [1.87239671, -37.77770615],
+            [2.29455662, -37.75780869],
+            [3.46240664, -37.70191574],
+            [4.03292656, -37.66667175],
+            [4.50861645, -37.63816452],
+            [5.0234251, -37.59908676],
+            [5.6195035, -37.56155014],
+            [6.09208822, -37.54240036],
+            [6.69122982, -37.3888588],
+            [7.03402853, -37.24850082],
+            [7.58835173, -37.12587738],
+            [8.06714821, -37.05273056],
+            [8.54696846, -36.97715378],
+            [8.90174294, -36.9198761],
+            [9.576087, -36.81920242],
+            [10.00422287, -36.75016022]]},
+            'properties': {
+                'ID': 'Second'}
+    }]};
+
+    const layerIDs = []; // This array will contain a list used to filter against.
+    const layerIDs_ = [];
+    const filterInput = document.getElementById('filter-input');
+
+    map.on('style.load', () => {
+        // Add a GeoJSON source containing place coordinates and information.
+        map.addSource('point', {
+            'type': 'geojson',
+            'data': point
+        });
+        
+        for (const feature of point.features) {
+            const symbol = feature.properties.ID;
+            const layerID = `poi-${symbol.toLowerCase()}`;
+        
+        // Add a layer for this symbol type if it hasn't been added already.
+            if (!map.getLayer(layerID)) {
+                map.addLayer({
+                    'id': layerID,
+                    'type': 'circle',
+                    'source': 'point',
+                    'layout':{
+                        'visibility': 'visible'
+                    },
+                    'paint': {
+                        'circle-radius': 8,
+                        'circle-color': '#ffcd00',
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': 'white'
+                    },
+                    'filter': ['==', 'ID', symbol]
+                });
+        
+                layerIDs.push(layerID);
+            }
+
+            map.on('click', layerID, (e) => {
+        // Copy coordinates array.
+                const coordinates = e.features[0].geometry.coordinates.slice();
+                var p = e.features[0].properties;
+ 
+                // Ensure that if the map is zoomed out such that multiple
+                // copies of the feature are visible, the popup appears
+                // over the copy being pointed to.
+                while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                }
+ 
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(`<h4 style="color:#0057b8;">${p.ID}</h4>` + '<br>' + `<b>Timestamp: </b>` + `<i>${p.timestamp}</i>` + '<br>' + '<br>' + '<button id="view-path">Past track')
+                    // .setHTML(status)
+                    .addTo(map);
+
+                    map.addSource('path', {
+                        'type': 'geojson',
+                        'data': path
+                    });
+
+                    for (const feature of path.features) {
+                        const symbol_ = feature.properties.ID;
+                        const layerID_ = `poi-${symbol_}`;
+
+                        if (!map.getLayer(layerID_)) {
+                            map.addLayer({
+                                'id': layerID_,
+                                'type': 'line',
+                                'source': 'past_track',
+                                'layout': {
+                                    'visibility': 'none',
+                                    'line-join': 'round',
+                                    'line-cap': 'round'
+                                },
+                                'paint': {
+                                    'line-color': '#888',
+                                    'line-width': 4
+                                },
+                                'filter': ['==', 'ID', symbol_]
+                            });
+                    
+                            layerIDs_.push(layerID_);
+                        }
+                    }
+
+                    document.getElementById('view-path').onclick = function(e){
+
+                        for (const layerID of layerIDs) {
+                            map.setLayoutProperty(
+                                layerID,
+                                'visibility',
+                                layerID.clicked ? 'visible' : 'none'
+                            );
+
+                        }
+
+                        map.setLayoutProperty(
+                            layerID,
+                            'visibility',
+                            layerID.clicked ? 'visible' : 'visible'
+                        );
+
+                        map.setLayoutProperty(
+                            layerID_,
+                            'visibility',
+                            layerID_.clicked ? 'visible' : 'visible'
+                        );
+
+                        // map.getSource('past_track').setData(past_track);
+
+                    }
+
+            });
+
+            map.on('click', layerID, (e) => {
+                map.flyTo({
+                    center: e.features[0].geometry.coordinates
+                });
+            });
+    
+    // Change the cursor to a pointer when the mouse is over the places layer.
+            map.on('mouseenter', layerID, () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            
+            // Change it back to a pointer when it leaves.
+            map.on('mouseleave', layerID, () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+        }
+        
+        filterInput.addEventListener('keyup', (e) => {
+            // If the input value matches a layerID set
+            // it's visibility to 'visible' or else hide it.
+            const value = e.target.value.trim().toLowerCase();
+            for (const layerID of layerIDs) {
+                map.setLayoutProperty(
+                    layerID,
+                    'visibility',
+                    layerID.includes(value) ? 'visible' : 'none'
+                );
+            }
+        });
+    });
+
+    const layerList = document.getElementById('menu');
+    const inputs = layerList.getElementsByTagName('input');
+
+    function switchLayer(layer) {
+      var layerId = layer.target.id;
+      map.setStyle('mapbox://styles/mapbox/' + layerId);
+    }
+
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].onclick = switchLayer;
+    }
+
+    const geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl
+    });
+ 
+    document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+
+    map.addControl(new mapboxgl.NavigationControl());
+
+</script>
+
+</body>
+</html>
